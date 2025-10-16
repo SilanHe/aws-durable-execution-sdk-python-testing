@@ -119,6 +119,15 @@ jobs:
         echo "All Response Headers:"
         jq -r '.ResponseMetadata.HTTPHeaders' /tmp/invoke_response.json || echo "No HTTPHeaders found"
         
+        # Check for function errors
+        FUNCTION_ERROR=$(jq -r '.FunctionError // empty' /tmp/invoke_response.json)
+        if [ -n "$FUNCTION_ERROR" ]; then
+          echo "ERROR: Lambda function failed with error: $FUNCTION_ERROR"
+          echo "Function response:"
+          cat /tmp/response.json
+          exit 1
+        fi
+        
         # Extract invocation ID from response headers
         INVOCATION_ID=$(jq -r '.ResponseMetadata.HTTPHeaders["x-amzn-invocation-id"] // empty' /tmp/invoke_response.json)
         if [ -n "$INVOCATION_ID" ]; then
