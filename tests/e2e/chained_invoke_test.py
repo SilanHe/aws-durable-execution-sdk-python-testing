@@ -47,6 +47,7 @@ class TestChainedInvokeIntegration:
 
         _Requirements: 1.1, 1.4, 2.1_
         """
+
         def dummy_handler(event, context):
             return {"status": "ok"}
 
@@ -70,6 +71,7 @@ class TestChainedInvokeIntegration:
 
         _Requirements: 1.4_
         """
+
         def dummy_handler(event, context):
             return {"status": "ok"}
 
@@ -94,20 +96,27 @@ class TestChainedInvokeIntegration:
 
         _Requirements: 1.2, 1.3_
         """
+
         def dummy_handler(event, context):
             return {"status": "ok"}
 
         with DurableFunctionTestRunner(handler=dummy_handler) as runner:
             # Empty function name should raise
-            with pytest.raises(InvalidParameterValueException, match="function_name is required"):
+            with pytest.raises(
+                InvalidParameterValueException, match="function_name is required"
+            ):
                 runner.register_handler("", lambda p: p)
 
             # None function name should raise
-            with pytest.raises(InvalidParameterValueException, match="function_name is required"):
+            with pytest.raises(
+                InvalidParameterValueException, match="function_name is required"
+            ):
                 runner.register_handler(None, lambda p: p)
 
             # None handler should raise
-            with pytest.raises(InvalidParameterValueException, match="handler is required"):
+            with pytest.raises(
+                InvalidParameterValueException, match="handler is required"
+            ):
                 runner.register_handler("test-fn", None)
 
 
@@ -188,6 +197,7 @@ class TestChainedInvokeExecution:
 
         # Wait for handler to be invoked (scheduler runs async)
         import time
+
         time.sleep(0.1)
 
         # Verify handler was called with correct payload
@@ -236,7 +246,9 @@ class TestChainedInvokeExecution:
             checkpoint_calls.append(kwargs)
             # Don't actually process to avoid side effects
 
-        test_components["checkpoint_processor"].process_checkpoint = mock_process_checkpoint
+        test_components[
+            "checkpoint_processor"
+        ].process_checkpoint = mock_process_checkpoint
 
         # Create mock execution
         execution_arn = "test-arn"
@@ -260,6 +272,7 @@ class TestChainedInvokeExecution:
 
         # Wait for handler to complete
         import time
+
         time.sleep(0.1)
 
         # Verify checkpoint was called with SUCCEED action
@@ -289,7 +302,9 @@ class TestChainedInvokeExecution:
         def mock_process_checkpoint(**kwargs):
             checkpoint_calls.append(kwargs)
 
-        test_components["checkpoint_processor"].process_checkpoint = mock_process_checkpoint
+        test_components[
+            "checkpoint_processor"
+        ].process_checkpoint = mock_process_checkpoint
 
         # Create mock execution
         execution_arn = "test-arn"
@@ -313,6 +328,7 @@ class TestChainedInvokeExecution:
 
         # Wait for handler to complete
         import time
+
         time.sleep(0.1)
 
         # Verify checkpoint was called with FAIL action
@@ -373,15 +389,18 @@ class TestNonDurableFunctionExecution:
 
         _Requirements: 8.2_
         """
+
         def child_handler(payload: str | None) -> str | None:
             # Handler returns serialized JSON string
-            return json.dumps({
-                "string": "value",
-                "number": 123,
-                "boolean": True,
-                "array": [1, 2, 3],
-                "nested": {"key": "value"},
-            })
+            return json.dumps(
+                {
+                    "string": "value",
+                    "number": 123,
+                    "boolean": True,
+                    "array": [1, 2, 3],
+                    "nested": {"key": "value"},
+                }
+            )
 
         def dummy_handler(event, context):
             return {"status": "ok"}
@@ -406,6 +425,7 @@ class TestNonDurableFunctionExecution:
 
         _Requirements: 8.3_
         """
+
         def failing_child(payload: str | None) -> str | None:
             raise RuntimeError("Child function failed")
 

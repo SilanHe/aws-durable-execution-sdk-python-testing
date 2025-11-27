@@ -2209,6 +2209,7 @@ def test_property_handler_registration_preserves_all_handlers(handler_pairs):
 
     **Validates: Requirements 1.1, 1.4**
     """
+
     # Create a minimal handler for the test runner
     def dummy_handler(event, context):
         return {"status": "ok"}
@@ -2228,26 +2229,33 @@ def test_property_handler_registration_preserves_all_handlers(handler_pairs):
 
 def test_register_handler_empty_function_name_raises():
     """Test that registering with empty function_name raises InvalidParameterValueException."""
+
     def dummy_handler(event, context):
         return {"status": "ok"}
 
     with DurableFunctionTestRunner(dummy_handler) as runner:
-        with pytest.raises(InvalidParameterValueException, match="function_name is required"):
+        with pytest.raises(
+            InvalidParameterValueException, match="function_name is required"
+        ):
             runner.register_handler("", lambda x: x)
 
 
 def test_register_handler_none_function_name_raises():
     """Test that registering with None function_name raises InvalidParameterValueException."""
+
     def dummy_handler(event, context):
         return {"status": "ok"}
 
     with DurableFunctionTestRunner(dummy_handler) as runner:
-        with pytest.raises(InvalidParameterValueException, match="function_name is required"):
+        with pytest.raises(
+            InvalidParameterValueException, match="function_name is required"
+        ):
             runner.register_handler(None, lambda x: x)
 
 
 def test_register_handler_none_handler_raises():
     """Test that registering with None handler raises InvalidParameterValueException."""
+
     def dummy_handler(event, context):
         return {"status": "ok"}
 
@@ -2258,6 +2266,7 @@ def test_register_handler_none_handler_raises():
 
 def test_get_handler_not_found_returns_none():
     """Test that get_handler returns None for unregistered function names."""
+
     def dummy_handler(event, context):
         return {"status": "ok"}
 
@@ -2268,6 +2277,7 @@ def test_get_handler_not_found_returns_none():
 
 def test_register_handler_overwrites_existing():
     """Test that registering a handler with an existing name overwrites it."""
+
     def dummy_handler(event, context):
         return {"status": "ok"}
 
@@ -2384,9 +2394,13 @@ def test_cloud_runner_register_lambda_validation():
     )
 
     # Empty function_name should raise
-    with pytest.raises(InvalidParameterValueException, match="function_name is required"):
+    with pytest.raises(
+        InvalidParameterValueException, match="function_name is required"
+    ):
         runner.register_lambda("")
 
     # None function_name should raise
-    with pytest.raises(InvalidParameterValueException, match="function_name is required"):
+    with pytest.raises(
+        InvalidParameterValueException, match="function_name is required"
+    ):
         runner.register_lambda(None)

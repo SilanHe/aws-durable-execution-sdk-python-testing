@@ -46,15 +46,30 @@ class MockNotifier(ExecutionNotifier):
     "operation_id,function_name,payload,execution_arn",
     [
         # Basic case with payload
-        ("op-1", "child-function", '{"key": "value"}', "arn:aws:lambda:us-east-1:123456789012:execution:test"),
+        (
+            "op-1",
+            "child-function",
+            '{"key": "value"}',
+            "arn:aws:lambda:us-east-1:123456789012:execution:test",
+        ),
         # No payload
-        ("op-2", "handler-fn", None, "arn:aws:lambda:us-west-2:987654321098:execution:parent"),
+        (
+            "op-2",
+            "handler-fn",
+            None,
+            "arn:aws:lambda:us-west-2:987654321098:execution:parent",
+        ),
         # Empty payload
         ("op-3", "my-function", "", "test-arn"),
         # Complex payload
         ("op-complex", "complex-fn", '{"nested": {"array": [1, 2, 3]}}', "complex-arn"),
         # Long function name
-        ("op-long", "very-long-function-name-with-many-characters", '{"data": 123}', "long-arn"),
+        (
+            "op-long",
+            "very-long-function-name-with-many-characters",
+            '{"data": 123}',
+            "long-arn",
+        ),
     ],
 )
 def test_property_start_creates_pending_operation(
@@ -109,7 +124,11 @@ def test_property_start_creates_pending_operation(
     "operation_id,result_payload,execution_arn",
     [
         # Basic case with result
-        ("op-1", '{"result": "success"}', "arn:aws:lambda:us-east-1:123456789012:execution:test"),
+        (
+            "op-1",
+            '{"result": "success"}',
+            "arn:aws:lambda:us-east-1:123456789012:execution:test",
+        ),
         # No result
         ("op-2", None, "arn:aws:lambda:us-west-2:987654321098:execution:parent"),
         # Empty result
@@ -163,9 +182,19 @@ def test_property_succeed_updates_to_succeeded(
     "operation_id,error_type,error_message,execution_arn",
     [
         # Basic error
-        ("op-1", "RuntimeError", "Something went wrong", "arn:aws:lambda:us-east-1:123456789012:execution:test"),
+        (
+            "op-1",
+            "RuntimeError",
+            "Something went wrong",
+            "arn:aws:lambda:us-east-1:123456789012:execution:test",
+        ),
         # Timeout error
-        ("op-2", "TimeoutError", "Function timed out", "arn:aws:lambda:us-west-2:987654321098:execution:parent"),
+        (
+            "op-2",
+            "TimeoutError",
+            "Function timed out",
+            "arn:aws:lambda:us-west-2:987654321098:execution:parent",
+        ),
         # Resource not found
         ("op-3", "ResourceNotFoundException", "Handler not found", "test-arn"),
         # Generic error

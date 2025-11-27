@@ -374,9 +374,21 @@ def test_execution_notifier_all_notification_methods():
     "num_observers,execution_arn,operation_id,function_name,payload",
     [
         # Single observer with payload
-        (1, "arn:aws:lambda:us-east-1:123456789012:function:test", "op-1", "child-fn", '{"key": "value"}'),
+        (
+            1,
+            "arn:aws:lambda:us-east-1:123456789012:function:test",
+            "op-1",
+            "child-fn",
+            '{"key": "value"}',
+        ),
         # Multiple observers with payload
-        (3, "arn:aws:lambda:us-west-2:987654321098:function:parent", "op-abc", "handler-fn", '{"data": 123}'),
+        (
+            3,
+            "arn:aws:lambda:us-west-2:987654321098:function:parent",
+            "op-abc",
+            "handler-fn",
+            '{"data": 123}',
+        ),
         # Single observer with None payload
         (1, "test-arn", "operation-id", "my-function", None),
         # Multiple observers with None payload
@@ -384,7 +396,13 @@ def test_execution_notifier_all_notification_methods():
         # Edge case: empty string payload
         (2, "arn:test", "op-empty", "fn-name", ""),
         # Edge case: complex payload
-        (4, "complex-arn", "op-complex", "complex-fn", '{"nested": {"array": [1, 2, 3]}}'),
+        (
+            4,
+            "complex-arn",
+            "op-complex",
+            "complex-fn",
+            '{"nested": {"array": [1, 2, 3]}}',
+        ),
     ],
 )
 def test_property_observer_notification_broadcast(

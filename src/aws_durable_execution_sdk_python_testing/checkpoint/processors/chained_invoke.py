@@ -109,13 +109,19 @@ class ChainedInvokeProcessor(OperationProcessor):
 
         return Operation(
             operation_id=update.operation_id,
-            parent_id=update.parent_id if update.parent_id else (current_op.parent_id if current_op else None),
-            name=update.name if update.name else (current_op.name if current_op else None),
+            parent_id=update.parent_id
+            if update.parent_id
+            else (current_op.parent_id if current_op else None),
+            name=update.name
+            if update.name
+            else (current_op.name if current_op else None),
             start_timestamp=start_time,
             end_timestamp=end_time,
             operation_type=OperationType.CHAINED_INVOKE,
             status=OperationStatus.SUCCEEDED,
-            sub_type=update.sub_type if update.sub_type else (current_op.sub_type if current_op else None),
+            sub_type=update.sub_type
+            if update.sub_type
+            else (current_op.sub_type if current_op else None),
             chained_invoke_details=chained_invoke_details,
         )
 
@@ -136,12 +142,18 @@ class ChainedInvokeProcessor(OperationProcessor):
 
         return Operation(
             operation_id=update.operation_id,
-            parent_id=update.parent_id if update.parent_id else (current_op.parent_id if current_op else None),
-            name=update.name if update.name else (current_op.name if current_op else None),
+            parent_id=update.parent_id
+            if update.parent_id
+            else (current_op.parent_id if current_op else None),
+            name=update.name
+            if update.name
+            else (current_op.name if current_op else None),
             start_timestamp=start_time,
             end_timestamp=end_time,
             operation_type=OperationType.CHAINED_INVOKE,
             status=OperationStatus.FAILED,
-            sub_type=update.sub_type if update.sub_type else (current_op.sub_type if current_op else None),
+            sub_type=update.sub_type
+            if update.sub_type
+            else (current_op.sub_type if current_op else None),
             chained_invoke_details=chained_invoke_details,
         )

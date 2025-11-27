@@ -2901,6 +2901,7 @@ def test_property_successful_handler_result_capture(result_payload: str | None):
 
     **Validates: Requirements 2.3, 9.3**
     """
+
     # Arrange
     def test_handler(p: str | None) -> str | None:
         return result_payload
@@ -2963,6 +2964,7 @@ def test_property_failed_handler_error_capture(error_message: str):
 
     **Validates: Requirements 2.4, 9.4**
     """
+
     # Arrange
     def failing_handler(p: str | None) -> str | None:
         raise ValueError(error_message)
