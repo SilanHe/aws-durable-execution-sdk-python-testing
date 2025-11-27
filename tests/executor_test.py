@@ -110,6 +110,16 @@ class MockExecutionObserver(ExecutionObserver):
         """Capture stop events."""
         pass  # Not needed for current tests
 
+    def on_chained_invoke_started(
+        self,
+        execution_arn: str,
+        operation_id: str,
+        function_name: str,
+        payload: str | None,
+    ) -> None:
+        """Capture chained invoke start events."""
+        pass  # Not needed for current tests
+
 
 @pytest.fixture
 def test_observer():

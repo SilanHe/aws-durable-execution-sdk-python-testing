@@ -1032,6 +1032,24 @@ class Executor(ExecutionObserver):
         # Schedule callback timeouts if configured
         self._schedule_callback_timeouts(execution_arn, callback_options, callback_id)
 
+    def on_chained_invoke_started(
+        self,
+        execution_arn: str,
+        operation_id: str,
+        function_name: str,
+        payload: str | None,
+    ) -> None:
+        """Handle chained invoke start. Observer method triggered by notifier.
+
+        Note: Full implementation will be added in task 6 (Implement Executor Handler Invocation).
+        """
+        logger.debug(
+            "[%s] Chained invoke started for operation %s, function: %s",
+            execution_arn,
+            operation_id,
+            function_name,
+        )
+
     # endregion ExecutionObserver
 
     # region Callback Timeouts
