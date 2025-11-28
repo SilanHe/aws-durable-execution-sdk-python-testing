@@ -3025,6 +3025,10 @@ def test_on_chained_invoke_started_handler_not_found():
         handler_registry={},  # Empty registry
     )
 
+    # Set up completion event so the executor doesn't skip this execution
+    mock_completion_event = Mock()
+    executor._completion_events["test-arn"] = mock_completion_event
+
     with pytest.raises(
         ResourceNotFoundException, match="No handler registered for function"
     ):

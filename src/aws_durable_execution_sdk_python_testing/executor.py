@@ -87,7 +87,9 @@ class Executor(ExecutionObserver):
         self._scheduler = scheduler
         self._invoker = invoker
         self._checkpoint_processor = checkpoint_processor
-        self._handler_registry = handler_registry or {}
+        # if we want to share the registry, we need to check against None explicitly.
+        # a = {}; b = {}; (a or b) is b
+        self._handler_registry = handler_registry if handler_registry is not None else {}
         self._completion_events: dict[str, Event] = {}
         self._callback_timeouts: dict[str, Future] = {}
         self._callback_heartbeats: dict[str, Future] = {}
@@ -1045,7 +1047,18 @@ class Executor(ExecutionObserver):
         """Handle chained invoke start. Observer method triggered by notifier.
 
         Looks up the handler from the registry and schedules async invocation.
+        If the handler is not found, schedules a failure checkpoint instead.
+
+        Note: This executor only handles chained invokes for executions it owns
+        (i.e., executions in its _completion_events). This allows multiple executors
+        to share the same checkpoint processor without interfering with each other.
         """
+        # Only handle chained invokes for executions this executor owns
+        completion_event = self._completion_events.get(execution_arn)
+        if completion_event is None:
+            # This execution is not owned by this executor, skip
+            return
+
         logger.debug(
             "[%s] Chained invoke started for operation %s, function: %s",
             execution_arn,
@@ -1054,13 +1067,12 @@ class Executor(ExecutionObserver):
         )
 
         handler = self._handler_registry.get(function_name)
-        if handler is None:
-            raise ResourceNotFoundException(
-                f"No handler registered for function: {function_name}"
-            )
 
-        # Schedule handler invocation using call_later with delay=0
-        completion_event = self._completion_events.get(execution_arn)
+        if handler is None:
+            # Handler not found - raise exception immediately
+            # This is a test configuration error, not a runtime failure
+            msg = f"No handler registered for function: {function_name}. Did you forget to call runner.register_handler('{function_name}', handler)?"
+            raise ResourceNotFoundException(msg)
 
         def invoke_handler() -> None:
             self._invoke_child_handler(
@@ -1147,6 +1159,7 @@ class Executor(ExecutionObserver):
         self._checkpoint_processor.process_checkpoint(
             checkpoint_token=checkpoint_token,
             updates=[update],
+            client_token=None,
         )
 
         # Re-invoke the parent execution to continue
@@ -1172,6 +1185,7 @@ class Executor(ExecutionObserver):
         self._checkpoint_processor.process_checkpoint(
             checkpoint_token=checkpoint_token,
             updates=[update],
+            client_token=None,
         )
 
         # Re-invoke the parent execution to continue
