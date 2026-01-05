@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import threading
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 
 import pytest
 
@@ -16,8 +17,13 @@ from aws_durable_execution_sdk_python_testing.exceptions import (
     SerializationError,
     UnknownRouteError,
 )
-from aws_durable_execution_sdk_python_testing.web.models import HTTPResponse
+from aws_durable_execution_sdk_python_testing.web.models import (
+    HTTPRequest,
+    HTTPResponse,
+)
 from aws_durable_execution_sdk_python_testing.web.routes import (
+    BytesPayloadRoute,
+    CallbackSuccessRoute,
     GetDurableExecutionRoute,
     HealthRoute,
     Router,
@@ -250,3 +256,111 @@ def test_request_handler_error_response_through_public_api():
             "message": "Test error message",
         }
         assert response.body == expected_body
+
+
+def test_handle_request_successful_route_parsing():
+    """Test _handle_request successfully parses route and calls handler."""
+    mock_route = Mock(spec=StartExecutionRoute)
+    mock_handler = Mock()
+    mock_response = HTTPResponse(status_code=200, headers={}, body={})
+    mock_handler.handle.return_value = mock_response
+
+    handler = _create_mock_request_handler()
+    handler.router.find_route.return_value = mock_route
+    handler.endpoint_handlers = {type(mock_route): mock_handler}
+    handler.path = "/test-path"
+    handler.headers = {"Content-Length": "10"}
+    handler.rfile = io.BytesIO(b'{"test":1}')
+
+    with patch.object(handler, "_send_response") as mock_send:
+        handler._handle_request("POST")
+
+    handler.router.find_route.assert_called_once_with("/test-path", "POST")
+    mock_handler.handle.assert_called_once()
+    mock_send.assert_called_once_with(mock_response)
+
+
+def test_handle_request_bytes_payload_route():
+    """Test _handle_request handles BytesPayloadRoute with raw bytes."""
+    mock_route = Mock(spec=BytesPayloadRoute)
+    mock_handler = Mock()
+    mock_response = HTTPResponse(status_code=200, headers={}, body={})
+    mock_handler.handle.return_value = mock_response
+
+    handler = _create_mock_request_handler()
+    handler.router.find_route.return_value = mock_route
+    handler.endpoint_handlers = {type(mock_route): mock_handler}
+    handler.path = "/callback?param=value"
+    handler.headers = {"Content-Length": "5"}
+    handler.rfile = io.BytesIO(b"bytes")
+
+    with (
+        patch.object(HTTPRequest, "from_raw_bytes") as mock_from_raw,
+        patch.object(handler, "_send_response"),
+    ):
+        mock_from_raw.return_value = Mock()
+        handler._handle_request("POST")
+
+    mock_from_raw.assert_called_once_with(
+        body_bytes=b"bytes",
+        method="POST",
+        path=mock_route,
+        headers=dict(handler.headers),
+        query_params={"param": ["value"]},
+    )
+
+
+def test_handle_request_regular_route():
+    """Test _handle_request handles regular route with parsed body."""
+    mock_route = Mock(spec=StartExecutionRoute)
+    mock_handler = Mock()
+    mock_response = HTTPResponse(status_code=200, headers={}, body={})
+    mock_handler.handle.return_value = mock_response
+
+    handler = _create_mock_request_handler()
+    handler.router.find_route.return_value = mock_route
+    handler.endpoint_handlers = {type(mock_route): mock_handler}
+    handler.path = "/start?timeout=30"
+    handler.headers = {"Content-Length": "0"}
+    handler.rfile = io.BytesIO(b"")
+
+    with (
+        patch.object(HTTPRequest, "from_bytes") as mock_from_bytes,
+        patch.object(handler, "_send_response"),
+    ):
+        mock_from_bytes.return_value = Mock()
+        handler._handle_request("POST")
+
+    mock_from_bytes.assert_called_once_with(
+        body_bytes=b"",
+        operation_name=None,
+        method="POST",
+        path=mock_route,
+        headers=dict(handler.headers),
+        query_params={"timeout": ["30"]},
+    )
+
+
+def test_handle_request_exception_handling():
+    """Test _handle_request handles exceptions and sends error response."""
+    handler = _create_mock_request_handler()
+    handler.router.find_route.side_effect = ValueError("Test error")
+    handler.path = "/error-path"
+
+    with patch.object(handler, "_send_response") as mock_send:
+        handler._handle_request("GET")
+
+    mock_send.assert_called_once()
+    response = mock_send.call_args[0][0]
+    assert response.status_code == 500
+
+
+def _create_mock_request_handler():
+    """Helper to create a mock RequestHandler for testing."""
+    handler = Mock(spec=RequestHandler)
+    handler.router = Mock()
+    handler.endpoint_handlers = {}
+    handler.headers = {}
+    handler._handle_request = RequestHandler._handle_request.__get__(handler)
+    handler._send_response = Mock()
+    return handler

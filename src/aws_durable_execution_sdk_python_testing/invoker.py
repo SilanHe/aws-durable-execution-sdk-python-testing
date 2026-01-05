@@ -12,14 +12,13 @@ from aws_durable_execution_sdk_python.execution import (
     DurableExecutionInvocationInputWithClient,
     DurableExecutionInvocationOutput,
     InitialExecutionState,
-    InvocationStatus,
 )
 
 from aws_durable_execution_sdk_python_testing.exceptions import (
     DurableFunctionsTestError,
-    ServiceException,
 )
 from aws_durable_execution_sdk_python_testing.model import LambdaContext
+from aws_durable_execution_sdk_python_testing.serialization import DateTimeEncoder
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -239,7 +238,7 @@ class LambdaInvoker(Invoker):
             response = client.invoke(
                 FunctionName=function_name,
                 InvocationType="RequestResponse",  # Synchronous invocation
-                Payload=json.dumps(input.to_dict(), default=str),
+                Payload=json.dumps(input.to_dict(), cls=DateTimeEncoder),
             )
 
             # Check HTTP status code

@@ -14,7 +14,7 @@ from aws_durable_execution_sdk_python_testing.exceptions import (
 
 # Removed deprecated imports from web.errors
 from aws_durable_execution_sdk_python_testing.web.routes import Route
-from aws_durable_execution_sdk_python_testing.web.serialization import (
+from aws_durable_execution_sdk_python_testing.serialization import (
     AwsRestJsonDeserializer,
     JSONSerializer,
     Serializer,

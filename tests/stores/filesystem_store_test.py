@@ -271,14 +271,14 @@ def test_filesystem_execution_store_thread_safety_basic(store, sample_execution)
 
 def test_datetime_object_hook_converts_timestamp_fields():
     """Test conversion of timestamp fields to datetime objects."""
-    timestamp = 1672531200.0  # 2023-01-01 00:00:00 UTC
+    timestamp = 1672531200000  # 2023-01-01 00:00:00 UTC
     obj = {
         "start_timestamp": timestamp,
     }
 
     result = datetime_object_hook(obj)
 
-    expected_datetime = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    expected_datetime = datetime.fromtimestamp(timestamp / 1000, tz=timezone.utc)
     assert result["start_timestamp"] == expected_datetime
 
 

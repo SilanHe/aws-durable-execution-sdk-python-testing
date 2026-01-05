@@ -11,10 +11,12 @@ from datetime import datetime, timezone
 from aws_durable_execution_sdk_python_testing.exceptions import (
     InvalidParameterValueException,
 )
-from aws_durable_execution_sdk_python_testing.web.serialization import (
+from aws_durable_execution_sdk_python_testing.serialization import (
     JSONSerializer,
     AwsRestJsonDeserializer,
     AwsRestJsonSerializer,
+    DateTimeEncoder,
+    datetime_object_hook,
 )
 
 
@@ -40,12 +42,10 @@ def test_aws_rest_json_serializer_should_initialize_and_serialize_data():
     )
 
 
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.create_serializer")
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.ServiceModel")
-@patch(
-    "aws_durable_execution_sdk_python_testing.web.serialization.botocore.loaders.Loader"
-)
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.os.path.dirname")
+@patch("aws_durable_execution_sdk_python_testing.serialization.create_serializer")
+@patch("aws_durable_execution_sdk_python_testing.serialization.ServiceModel")
+@patch("aws_durable_execution_sdk_python_testing.serialization.botocore.loaders.Loader")
+@patch("aws_durable_execution_sdk_python_testing.serialization.os.path.dirname")
 def test_aws_rest_json_serializer_should_create_serializer_with_boto_components(
     mock_dirname,
     mock_loader_class,
@@ -90,7 +90,7 @@ def test_aws_rest_json_serializer_should_create_serializer_with_boto_components(
     mock_service_model.operation_model.assert_called_once_with(operation_name)
 
 
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.create_serializer")
+@patch("aws_durable_execution_sdk_python_testing.serialization.create_serializer")
 def test_aws_rest_json_serializer_should_raise_serialization_error_when_create_fails(
     mock_create_serializer,
 ):
@@ -222,12 +222,10 @@ def test_aws_rest_json_deserializer_should_initialize_and_deserialize_data():
     mock_parser.parse.assert_called_once_with(expected_response_dict, mock_output_shape)
 
 
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.create_parser")
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.ServiceModel")
-@patch(
-    "aws_durable_execution_sdk_python_testing.web.serialization.botocore.loaders.Loader"
-)
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.os.path.dirname")
+@patch("aws_durable_execution_sdk_python_testing.serialization.create_parser")
+@patch("aws_durable_execution_sdk_python_testing.serialization.ServiceModel")
+@patch("aws_durable_execution_sdk_python_testing.serialization.botocore.loaders.Loader")
+@patch("aws_durable_execution_sdk_python_testing.serialization.os.path.dirname")
 def test_aws_rest_json_deserializer_should_create_deserializer_with_boto_components(
     mock_dirname,
     mock_loader_class,
@@ -274,7 +272,7 @@ def test_aws_rest_json_deserializer_should_create_deserializer_with_boto_compone
     mock_service_model.operation_model.assert_called_once_with(operation_name)
 
 
-@patch("aws_durable_execution_sdk_python_testing.web.serialization.create_parser")
+@patch("aws_durable_execution_sdk_python_testing.serialization.create_parser")
 def test_aws_rest_json_deserializer_should_raise_serialization_error_when_create_fails(
     mock_create_parser,
 ):
@@ -404,13 +402,13 @@ def test_serialize_datetime():
     data = {"timestamp": now}
 
     result = serializer.to_bytes(data)
-    expected = b'{"timestamp":1762360209.895}'
+    expected = b'{"timestamp":1762360209895}'
 
     assert result == expected
     assert isinstance(result, bytes)
 
     deserialized = json.loads(result.decode("utf-8"))
-    assert deserialized["timestamp"] == now.timestamp()
+    assert deserialized["timestamp"] == int(now.timestamp() * 1000)
 
 
 def test_serialize_nested_datetime():
@@ -426,16 +424,16 @@ def test_serialize_nested_datetime():
     result = serializer.to_bytes(data)
     expected = (
         b'{"event":"user_login",'
-        b'"timestamp":1762360209.0,'
-        b'"metadata":{"created_at":1762360209.0,'
-        b'"updated_at":1762360209.0}}'
+        b'"timestamp":1762360209000,'
+        b'"metadata":{"created_at":1762360209000,'
+        b'"updated_at":1762360209000}}'
     )
 
     assert result == expected
 
     deserialized = json.loads(result.decode("utf-8"))
-    assert deserialized["timestamp"] == now.timestamp()
-    assert deserialized["metadata"]["created_at"] == now.timestamp()
+    assert deserialized["timestamp"] == int(now.timestamp() * 1000)
+    assert deserialized["metadata"]["created_at"] == int(now.timestamp() * 1000)
 
 
 def test_serialize_list_with_datetime():
@@ -449,16 +447,16 @@ def test_serialize_list_with_datetime():
     result = serializer.to_bytes(data)
     expected = (
         b'{"events":['
-        b'{"time":1762360209.0,"action":"login"},'
-        b'{"time":1762360209.0,"action":"logout"}'
+        b'{"time":1762360209000,"action":"login"},'
+        b'{"time":1762360209000,"action":"logout"}'
         b"]}"
     )
 
     assert result == expected
 
     deserialized = json.loads(result.decode("utf-8"))
-    assert deserialized["events"][0]["time"] == now.timestamp()
-    assert deserialized["events"][1]["time"] == now.timestamp()
+    assert deserialized["events"][0]["time"] == int(now.timestamp() * 1000)
+    assert deserialized["events"][1]["time"] == int(now.timestamp() * 1000)
 
 
 def test_serialize_mixed_types():
@@ -483,7 +481,7 @@ def test_serialize_mixed_types():
         b'"boolean":true,'
         b'"null":null,'
         b'"list":[1,2,3],'
-        b'"datetime":1762360209.0}'
+        b'"datetime":1762360209000}'
     )
 
     assert result == expected
@@ -495,7 +493,7 @@ def test_serialize_mixed_types():
     assert deserialized["boolean"] is True
     assert deserialized["null"] is None
     assert deserialized["list"] == [1, 2, 3]
-    assert deserialized["datetime"] == now.timestamp()
+    assert deserialized["datetime"] == int(now.timestamp() * 1000)
 
 
 def test_serialize_returns_bytes():
@@ -546,7 +544,7 @@ def test_serialize_datetime_with_microseconds():
     data = {"timestamp": now}
 
     result = serializer.to_bytes(data)
-    expected = b'{"timestamp":1762360209.123456}'
+    expected = b'{"timestamp":1762360209123}'
 
     assert result == expected
 
@@ -558,7 +556,7 @@ def test_serialize_datetime_without_microseconds():
     data = {"timestamp": now}
 
     result = serializer.to_bytes(data)
-    expected = b'{"timestamp":1762360209.0}'
+    expected = b'{"timestamp":1762360209000}'
 
     assert result == expected
 
@@ -571,6 +569,116 @@ def test_serialize_multiple_datetimes():
 
     data = {"start": dt1, "end": dt2}
     result = serializer.to_bytes(data)
-    expected = b'{"start":1735689600.0,"end":1767225599.0}'
+    expected = b'{"start":1735689600000,"end":1767225599000}'
 
     assert result == expected
+
+
+def test_datetime_encoder_converts_datetime_to_milliseconds():
+    """Test that DateTimeEncoder converts datetime to millisecond timestamps."""
+    encoder = DateTimeEncoder()
+    dt = datetime(2025, 11, 5, 16, 30, 9, 895000, tzinfo=timezone.utc)
+
+    result = encoder.default(dt)
+    expected = int(dt.timestamp() * 1000)
+
+    assert result == expected
+    assert result == 1762360209895
+
+
+def test_datetime_encoder_handles_non_datetime_objects():
+    """Test that DateTimeEncoder delegates to parent for non-datetime objects."""
+    encoder = DateTimeEncoder()
+
+    # Should delegate to parent's default method for non-datetime objects
+    with pytest.raises(TypeError):
+        encoder.default(object())
+
+
+def test_datetime_encoder_in_json_dumps():
+    """Test DateTimeEncoder when used with json.dumps."""
+    dt = datetime(2025, 11, 5, 16, 30, 9, 895000, tzinfo=timezone.utc)
+    data = {"timestamp": dt}
+
+    result = json.dumps(data, cls=DateTimeEncoder)
+    expected = '{"timestamp": 1762360209895}'
+
+    assert result == expected
+
+
+def test_datetime_encoder_precision():
+    """Test that DateTimeEncoder maintains millisecond precision."""
+    encoder = DateTimeEncoder()
+    dt = datetime(2025, 11, 5, 16, 30, 9, 123456, tzinfo=timezone.utc)
+
+    result = encoder.default(dt)
+    expected = int(dt.timestamp() * 1000)
+
+    assert result == expected
+    assert result == 1762360209123
+
+
+def test_datetime_object_hook_converts_timestamp_fields():
+    """Test that datetime_object_hook converts timestamp fields to datetime objects."""
+    from datetime import UTC
+
+    obj = {
+        "user_timestamp": 1762360209000,
+        "created_time": 1735689600000,
+        "lastModifiedTimestamp": 1767225599000,
+        "endTime": 1762360209895,
+    }
+
+    result = datetime_object_hook(obj)
+    assert result["user_timestamp"] == datetime(
+        2025, 11, 5, 16, 30, 9, tzinfo=timezone.utc
+    )
+    assert result["created_time"] == datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    assert result["lastModifiedTimestamp"] == datetime(
+        2025, 12, 31, 23, 59, 59, tzinfo=timezone.utc
+    )
+    assert result["endTime"] == datetime(
+        2025, 11, 5, 16, 30, 9, 895000, tzinfo=timezone.utc
+    )
+    assert result["user_timestamp"].tzinfo == UTC
+
+
+def test_datetime_object_hook_preserves_non_timestamp_fields():
+    """Test that datetime_object_hook preserves fields that don't match timestamp patterns."""
+    obj = {"name": "test", "count": 42, "price": 19.99, "active": True}
+
+    result = datetime_object_hook(obj)
+
+    assert result == obj
+    assert result["name"] == "test"
+    assert result["count"] == 42
+    assert result["price"] == 19.99
+    assert result["active"] is True
+
+
+def test_datetime_object_hook_handles_non_dict_objects():
+    """Test that datetime_object_hook returns non-dict objects unchanged."""
+    assert datetime_object_hook("string") == "string"
+    assert datetime_object_hook(42) == 42
+    assert datetime_object_hook([1, 2, 3]) == [1, 2, 3]
+    assert datetime_object_hook(None) is None
+
+
+def test_datetime_object_hook_mixed_field_types():
+    """Test datetime_object_hook with mixed field types including nested structures."""
+    obj = {
+        "event_timestamp": 1762360209000,
+        "metadata": {"created_time": 1735689600000, "description": "test event"},
+        "tags": ["important", "user-action"],
+        "count": 1,
+    }
+
+    result = datetime_object_hook(obj)
+
+    assert isinstance(result["event_timestamp"], datetime)
+    assert result["metadata"] == {
+        "created_time": 1735689600000,
+        "description": "test event",
+    }
+    assert result["tags"] == ["important", "user-action"]
+    assert result["count"] == 1

@@ -4,40 +4,19 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import UTC, datetime
 from pathlib import Path
 
 from aws_durable_execution_sdk_python_testing.exceptions import (
     ResourceNotFoundException,
 )
+from aws_durable_execution_sdk_python_testing.serialization import (
+    DateTimeEncoder,
+    datetime_object_hook,
+)
 from aws_durable_execution_sdk_python_testing.execution import Execution
 from aws_durable_execution_sdk_python_testing.stores.base import (
     BaseExecutionStore,
 )
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    """Custom JSON encoder that handles datetime objects."""
-
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.timestamp()
-        return super().default(obj)
-
-
-def datetime_object_hook(obj):
-    """JSON object hook to convert unix timestamps back to datetime objects."""
-    if isinstance(obj, dict):
-        for key, value in obj.items():
-            if isinstance(value, int | float) and key.endswith(
-                ("_timestamp", "_time", "Timestamp", "Time")
-            ):
-                try:  # noqa: SIM105
-                    obj[key] = datetime.fromtimestamp(value, tz=UTC)
-                except (ValueError, OSError):
-                    # Leave as number if not a valid timestamp
-                    pass
-    return obj
 
 
 class FileSystemExecutionStore(BaseExecutionStore):

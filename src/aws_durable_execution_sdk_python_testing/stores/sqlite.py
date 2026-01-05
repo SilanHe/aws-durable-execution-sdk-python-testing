@@ -17,7 +17,7 @@ from aws_durable_execution_sdk_python_testing.execution import Execution
 from aws_durable_execution_sdk_python_testing.stores.base import (
     ExecutionStore,
 )
-from aws_durable_execution_sdk_python_testing.stores.filesystem import (
+from aws_durable_execution_sdk_python_testing.serialization import (
     DateTimeEncoder,
     datetime_object_hook,
 )

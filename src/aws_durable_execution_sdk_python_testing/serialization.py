@@ -6,12 +6,11 @@ along with AWS-compatible implementations using boto's rest-json serializers.
 
 from __future__ import annotations
 
-import json
 import os
+import json
 from typing import Any, Protocol
-from datetime import datetime
+from datetime import datetime, UTC
 
-import aws_durable_execution_sdk_python
 import botocore.loaders  # type: ignore
 from botocore.model import ServiceModel  # type: ignore
 from botocore.parsers import create_parser  # type: ignore
@@ -20,6 +19,31 @@ from botocore.serialize import create_serializer  # type: ignore
 from aws_durable_execution_sdk_python_testing.exceptions import (
     InvalidParameterValueException,
 )
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    """Custom JSON encoder that converts datetime objects to millisecond timestamps, which match smithy encoding behaviour."""
+
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            # seconds_float to milliseconds
+            return int(obj.timestamp() * 1000)
+        return super().default(obj)
+
+
+def datetime_object_hook(obj):
+    """JSON object hook to convert millisecond timestamps back to datetime objects."""
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            if isinstance(value, int | float) and key.endswith(
+                ("_timestamp", "_time", "Timestamp", "Time")
+            ):
+                try:  # noqa: SIM105
+                    obj[key] = datetime.fromtimestamp(value / 1000, tz=UTC)
+                except (ValueError, OSError):
+                    # Leave as number if not a valid timestamp
+                    pass
+    return obj
 
 
 class Serializer(Protocol):
@@ -64,21 +88,12 @@ class JSONSerializer:
     def to_bytes(self, data: Any) -> bytes:
         """Serialize data to JSON bytes."""
         try:
-            json_string = json.dumps(
-                data, separators=(",", ":"), default=self._default_handler
-            )
+            json_string = json.dumps(data, separators=(",", ":"), cls=DateTimeEncoder)
             return json_string.encode("utf-8")
         except (TypeError, ValueError) as e:
             raise InvalidParameterValueException(
                 f"Failed to serialize data to JSON: {str(e)}"
             )
-
-    def _default_handler(self, obj: Any) -> float:
-        """Handle non-permitive objects."""
-        if isinstance(obj, datetime):
-            return obj.timestamp()
-        # Raise TypeError for unsupported types
-        raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
 
 class AwsRestJsonSerializer:
