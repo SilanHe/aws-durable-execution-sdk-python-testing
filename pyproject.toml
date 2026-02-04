@@ -24,7 +24,7 @@ classifiers = [
 dependencies = [
   "boto3>=1.42.1",
   "requests>=2.25.0",
-  "aws_durable_execution_sdk_python>=1.0.0",
+  "aws_durable_execution_sdk_python @ git+https://github.com/SilanHe/aws-durable-execution-sdk-python.git@test",
 ]
 
 [project.urls]
